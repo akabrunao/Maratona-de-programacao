@@ -1,64 +1,45 @@
-//https://codeforces.com/problemset/problem/1850/D
-
 #include <stdio.h>
 #include <stdlib.h>
 
-
-int compare_long_long(const void *a, const void *b) {
-    long long arg1 = *(const long long*)a;
-    long long arg2 = *(const long long*)b;
-    if (arg1 < arg2) return -1;
-    if (arg1 > arg2) return 1;
-    return 0;
+// Função de comparação para ordenação
+int comparar(const void *a, const void *b) {
+    return (*(int*)a - *(int*)b);
 }
-
 
 int main() {
     int t;
     scanf("%d", &t);
-
+    
     while (t--) {
-        long long n, k;
-        scanf("%lld %lld", &n, &k);
-
-        long long *a = (long long *)malloc(n * sizeof(long long));
-        for (long long i = 0; i < n; ++i) {
-            scanf("%lld", &a[i]);
-        }
-
+        int n, k;
+        scanf("%d %d", &n, &k);
         
-        qsort(a, n, sizeof(long long), compare_long_long);
-
-        long long min_removed = n; 
-
-        for (long long i = 0; i < (1LL << n); ++i) { 
-            long long subset_size = 0;
-            long long subset_count = 0;
-            long long *subset = (long long *)malloc(n * sizeof(long long));
-
-            for (long long j = 0; j < n; ++j) {
-                if ((i >> j) & 1) { 
-                    subset[subset_size++] = a[j];
-                }
-            }
-
-
-            if (subset_size > 0) {
-                int balanced = 1;
-                for (long long j = 1; j < subset_size; ++j) {
-                    if (abs(subset[j] - subset[j - 1]) > k) {
-                        balanced = 0;
-                        break;
-                    }
-                }
-                if (balanced) {
-                  min_removed = (min_removed < (n - subset_size)) ? min_removed : (n-subset_size);
-                }
-            }
-            free(subset);
+        int problemas[n];
+        for (int i = 0; i < n; i++) {
+            scanf("%d", &problemas[i]);
         }
-        printf("%lld\n", min_removed);
-        free(a);
+        
+        // Ordena os problemas por dificuldade
+        qsort(problemas, n, sizeof(int), comparar);
+        
+        int max_sequencia = 1;
+        int sequencia_atual = 1;
+        
+        // Encontra a maior sequência válida
+        for (int i = 1; i < n; i++) {
+            if (problemas[i] - problemas[i-1] <= k) {
+                sequencia_atual++;
+                if (sequencia_atual > max_sequencia) {
+                    max_sequencia = sequencia_atual;
+                }
+            } else {
+                sequencia_atual = 1;
+            }
+        }
+        
+        // Calcula o número mínimo de remoções
+        printf("%d\n", n - max_sequencia);
     }
+    
     return 0;
 }
