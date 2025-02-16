@@ -1,87 +1,85 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_F 1000000
+#define MAX 1000000
 
-int sd[MAX_F + 1];
+static long long counts[MAX+1];
+static int sod[MAX+1];       // soma de dígitos
+static int nextVal[MAX+1];   // x -> x - somaDeDigitos(x)
 
-void precompute_sd() {
-    for (int x = 0; x <= MAX_F; x++) {
-        int s = 0;
-        int tmp = x;
-        while (tmp > 0) {
-            s += tmp % 10;
+// Pré-calcula soma de dígitos e nextVal para todos x em [0..MAX]
+void precompute() {
+    for(int x = 0; x <= MAX; x++){
+        int tmp = x, sum = 0;
+        while(tmp > 0){
+            sum += (tmp % 10);
             tmp /= 10;
         }
-        sd[x] = s;
+        sod[x] = sum;
+        nextVal[x] = x - sum;  // next(x) = x - SOD(x)
     }
 }
 
-int count_geq(int *F, int N, int mid) {
-    int total = 0;
-    for (int i = 0; i < N; i++) {
-        int current = F[i];
-        int cnt = 0;
-        while (current >= mid) {
-            if (current == 0) break;
-            cnt++;
-            current -= sd[current];
+int main(){
+    // Leitura de N e K
+    int N;
+    long long K;  // K pode chegar a 1e9
+    scanf("%d %lld", &N, &K);
+
+    // Zera contagens
+    for(int i = 0; i <= MAX; i++){
+        counts[i] = 0;
+    }
+
+    // Lê as flores e contabiliza
+    int x;
+    int maxFlower = 0; // Para sabermos até onde precisamos ir
+    for(int i = 0; i < N; i++){
+        scanf("%d", &x);
+        counts[x]++;
+        if(x > maxFlower) {
+            maxFlower = x;
         }
-        total += cnt;
     }
-    return total;
-}
 
-int find_kth(int *F, int N, int K, int max_f) {
-    int low = 0, high = max_f;
-    int result = 0;
-    while (low <= high) {
-        int mid = (low + high) / 2;
-        int cnt = count_geq(F, N, mid);
-        if (cnt >= K) {
-            result = mid;
-            low = mid + 1;
+    // Pré-cálculo
+    precompute();
+
+    long long soFar = 0; // Quantas abelhas já coletaram
+    int largest = maxFlower;
+
+    // Percorre do maior valor até 0
+    while(largest >= 0){
+        // Se não há flores com esta quantidade, desce
+        if(counts[largest] == 0){
+            largest--;
+            continue;
+        }
+
+        long long c = counts[largest];
+        // Se podemos usar todas essas c flores e ainda não chegar na abelha K
+        if(soFar + c < K){
+            // Todas as c flores serão coletadas agora
+            counts[largest] = 0;
+            // Elas vão para nextVal[largest]
+            int nxt = nextVal[largest];
+            counts[nxt] += c;
+
+            // Avança c abelhas
+            soFar += c;
         } else {
-            high = mid - 1;
-        }
-    }
-    return result;
-}
-
-int main() {
-    precompute_sd();
-
-    int N, K;
-    scanf("%d %d", &N, &K);
-
-    int *F = malloc(N * sizeof(int));
-    int max_f = 0;
-    for (int i = 0; i < N; i++) {
-        scanf("%d", &F[i]);
-        if (F[i] > max_f) {
-            max_f = F[i];
+            // A abelha K está dentro deste grupo
+            // Então a K-ésima abelha coleta sumOfDigits(largest)
+            // e terminamos
+            int answer = sod[largest];
+            printf("%d\n", answer);
+            return 0;
         }
     }
 
-    // Compute T0
-    int T0 = 0;
-    for (int i = 0; i < N; i++) {
-        int current = F[i];
-        while (current > 0) {
-            T0++;
-            current -= sd[current];
-        }
-    }
-
-    if (K > T0) {
-        printf("0\n");
-        free(F);
-        return 0;
-    }
-
-    int v = find_kth(F, N, K, max_f);
-    printf("%d\n", sd[v]);
-
-    free(F);
+    // Se chegamos aqui e não retornamos, significa que soFar < K
+    // mas largest ficou < 0 => todas flores estão em 0
+    // Logo a abelha K coleta 0
+    printf("0\n");
     return 0;
 }
